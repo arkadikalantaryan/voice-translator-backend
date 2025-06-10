@@ -3,8 +3,18 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 
-const app = express(); 
-app.use(cors());
+const app = express();
+
+// Настройка CORS
+app.use(cors({
+  origin: 'https://myglobalinfo.com',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+}));
+
+// Обработка preflight-запросов
+app.options('*', cors());
+
 app.use(express.json());
 
 const port = process.env.PORT || 3000;
