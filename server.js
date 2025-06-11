@@ -1,54 +1,44 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
 const axios = require('axios');
-require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 10000;
 
-app.use(cors());
+// Настройка CORS
+app.use(cors({
+  origin: 'https://myglobalinfo.com',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+}));
+
+// Обработка preflight-запросов
+app.options('*', cors());
+
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-const upload = multer({ dest: 'uploads/' });
+const port = process.env.PORT || 3000;
+const API_KEY = process.env.GOOGLE_API_KEY;
 
 app.post('/translate', async (req, res) => {
-  const { text, source, target } = req.body;
+  const { text, target } = req.body;
   try {
-    const response = await axios.get('https://translate.googleapis.com/translate_a/single', {
-      params: {
-        client: 'gtx',
-        sl: source,
-        tl: target,
-        dt: 't',
-        q: text,
-      },
-    });
-
-    const translation = response.data[0].map((t) => t[0]).join('');
-    res.json({ translation });
-  } catch (error) {
-    console.error('🛑 Translation error:', error);
+    const resp = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2`,
+      {},
+      {
+        params: {
+          key: API_KEY,
+          q: text,
+          target: target
+        }
+      }
+    );
+    res.json({ translatedText: resp.data.data.translations[0].translatedText });
+  } catch (e) {
+    console.error(e.toJSON());
     res.status(500).json({ error: 'Translation failed' });
   }
 });
 
-app.post('/recognize', upload.single('audio'), async (req, res) => {
-  const lang = req.body.lang || 'en';
-  const filePath = req.file.path;
-
-  console.log('🎤 [RECOGNIZE] File uploaded:', req.file);
-  console.log('🎤 [RECOGNIZE] Lang requested:', lang);
-
-  // Вместо облачного STT — временный заглушка
-  return res.status(500).json({ error: 'Speech recognition (server) temporarily disabled' });
-
-  // (Позже можно добавить Web Speech API client-side и использовать это только для загрузки)
-});
-
-app.listen(port, () => {
-  console.log(`✅ Server running on port ${port}`);
-});
+app.listen(port, () => console.log(`Server on port ${port}`));
