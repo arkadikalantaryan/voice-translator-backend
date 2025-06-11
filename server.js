@@ -43,13 +43,15 @@ app.post('/translate', async (req, res) => {
 app.post('/speak', async (req, res) => {
   const { text, lang } = req.body;
 
+  console.log("🔈 TTS request:", text, "→", lang);
+
   try {
     const ttsResp = await axios.post(
       `https://texttospeech.googleapis.com/v1/text:synthesize?key=${API_KEY}`,
       {
         input: { text },
         voice: {
-          languageCode: lang,
+          languageCode: lang || "hy-AM",
           ssmlGender: "FEMALE"
         },
         audioConfig: {
@@ -66,7 +68,7 @@ app.post('/speak', async (req, res) => {
     });
     res.send(buffer);
   } catch (err) {
-    console.error(err.response?.data || err.message);
+    console.error("🛑 TTS error:", err.response?.data || err.message);
     res.status(500).json({ error: 'Text-to-speech failed' });
   }
 });
@@ -75,6 +77,10 @@ app.post('/speak', async (req, res) => {
 app.post('/recognize', upload.single('audio'), async (req, res) => {
   const audioPath = req.file.path;
   const lang = req.body.lang || 'hy-AM';
+
+  // 🔍 ЛОГИ для отладки
+  console.log("🎤 [RECOGNIZE] File uploaded:", req.file);
+  console.log("🎤 [RECOGNIZE] Lang requested:", lang);
 
   try {
     const audioBytes = fs.readFileSync(audioPath).toString('base64');
@@ -93,7 +99,7 @@ app.post('/recognize', upload.single('audio'), async (req, res) => {
     const transcription = sttResp.data.results?.[0]?.alternatives?.[0]?.transcript || '';
     res.json({ text: transcription });
   } catch (err) {
-    console.error(err.response?.data || err.message);
+    console.error("🛑 Speech recognition error:", err.response?.data || err.message);
     res.status(500).json({ error: 'Speech recognition failed' });
   } finally {
     fs.unlink(audioPath, () => {});
