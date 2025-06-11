@@ -21,22 +21,14 @@ const port = process.env.PORT || 3000;
 const API_KEY = process.env.GOOGLE_API_KEY;
 
 app.post('/translate', async (req, res) => {
-  const { text, target } = req.body;
+  const { text, source, target } = req.body;
   try {
-    const resp = await axios.post(
-      `https://translation.googleapis.com/language/translate/v2`,
-      {},
-      {
-        params: {
-          key: API_KEY,
-          q: text,
-          target: target
-        }
-      }
-    );
-    res.json({ translatedText: resp.data.data.translations[0].translatedText });
-  } catch (e) {
-    console.error(e.toJSON());
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${source}&tl=${target}&dt=t&q=${encodeURIComponent(text)}`;
+    const response = await axios.get(url);
+    const translatedText = response.data[0].map(item => item[0]).join('');
+    res.json({ translatedText });
+  } catch (error) {
+    console.error('[TRANSLATE ERROR]', error.toJSON ? error.toJSON() : error);
     res.status(500).json({ error: 'Translation failed' });
   }
 });
