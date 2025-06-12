@@ -7,7 +7,10 @@ const app = express();
 
 // Настройка CORS
 app.use(cors({
-  origin: 'https://myglobalinfo.com',
+  origin: [
+    'https://myglobalinfo.com',
+    'https://vtranslator.myglobalinfo.com'
+  ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
 }));
